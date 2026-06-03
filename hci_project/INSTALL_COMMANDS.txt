@@ -1,0 +1,204 @@
+===========================================================
+  HCI PROJECT — FULL INSTALLATION COMMANDS
+  Run these in order inside an Anaconda Prompt or PowerShell
+  Working directory: d:\6 - Semester\HCI\Project\hci_project\
+===========================================================
+
+-----------------------------------------------------------
+STEP 1 — Navigate to the project folder
+-----------------------------------------------------------
+cd "d:\6 - Semester\HCI\Project\hci_project"
+
+
+-----------------------------------------------------------
+STEP 2 — Create the conda environment
+         (only run ONCE — skips automatically if hci_env
+          already exists)
+-----------------------------------------------------------
+conda env create -f environment.yml
+
+
+  If the environment already exists and you want to
+  REBUILD it from scratch:
+    conda env remove -n hci_env
+    conda env create -f environment.yml
+
+  If you only want to ADD missing packages to an
+  existing hci_env:
+    conda env update -n hci_env -f environment.yml --prune
+
+
+-----------------------------------------------------------
+STEP 3 — Activate the environment
+         (run this every time you open a new terminal)
+-----------------------------------------------------------
+conda activate hci_env
+
+
+-----------------------------------------------------------
+STEP 4 — Verify the core imports installed correctly
+-----------------------------------------------------------
+python -c "import cv2, mediapipe, whisper, nltk; print('Core imports OK')"
+
+
+-----------------------------------------------------------
+STEP 5 — Download NLTK corpora + Whisper base model
+         (run ONCE after activating hci_env)
+-----------------------------------------------------------
+python setup_env.py
+
+
+-----------------------------------------------------------
+STEP 6 — Install PyAudio manually (Windows fix)
+         PyAudio needs a pre-built wheel on Windows.
+         Run this if you get a PyAudio import error:
+-----------------------------------------------------------
+pip install pipwin
+pipwin install pyaudio
+
+  OR (alternative, use the conda build):
+    conda install -n hci_env -c conda-forge pyaudio
+
+
+-----------------------------------------------------------
+STEP 7 — Install Ollama (for LLM-powered chatbot)
+         Do this at home on fast internet (~4.7 GB)
+-----------------------------------------------------------
+  a) Download and install Ollama from: https://ollama.com/download
+
+  b) Pull the llama3 model (run in ANY terminal, not just conda):
+     ollama pull llama3
+
+  c) Verify the model downloaded:
+     ollama list
+
+
+-----------------------------------------------------------
+STEP 8 — Run the Vision App
+-----------------------------------------------------------
+cd "d:\6 - Semester\HCI\Project\hci_project"
+conda activate hci_env
+python run_vision.py
+
+
+-----------------------------------------------------------
+STEP 9 — Run the Chatbot App
+         (start Ollama server first in a separate terminal)
+-----------------------------------------------------------
+  Terminal 1 — Start Ollama server:
+    ollama serve
+
+  Terminal 2 — Run the chatbot:
+    cd "d:\6 - Semester\HCI\Project\hci_project"
+    conda activate hci_env
+    python run_chatbot.py
+
+
+-----------------------------------------------------------
+STEP 10 — Test offline (no webcam / no mic needed)
+          Chatbot NEXUS offline replay:
+-----------------------------------------------------------
+cd "d:\6 - Semester\HCI\Project\hci_project"
+conda activate hci_env
+python run_chatbot.py
+  -> Select option 2 to switch to NEXUS mode
+  -> Select option 5 to run offline session replay
+
+
+===========================================================
+  MANUAL PIP INSTALLS (if conda env create fails)
+  Run these one by one after: conda activate hci_env
+===========================================================
+
+pip install opencv-python
+pip install mediapipe
+pip install deepface
+pip install tf-keras          # REQUIRED by DeepFace for emotion detection (TF >= 2.16)
+pip install sounddevice
+pip install soundfile
+pip install SpeechRecognition
+pip install pydub
+pip install openai-whisper
+pip install nltk
+pip install textblob
+pip install scikit-learn
+pip install ollama
+pip install anthropic
+pip install python-dotenv
+pip install requests
+pip install Pillow
+pip install gradio
+pip install pyttsx3
+pip install pipwin
+pipwin install pyaudio
+
+
+===========================================================
+  TROUBLESHOOTING COMMANDS
+===========================================================
+
+--- Check which Python is active ---
+where python
+python --version
+
+--- Check conda env list ---
+conda env list
+
+--- List all packages installed in hci_env ---
+conda activate hci_env
+pip list
+
+--- Test individual imports ---
+python -c "import cv2; print('OpenCV:', cv2.__version__)"
+python -c "import mediapipe; print('MediaPipe OK')"
+python -c "import whisper; print('Whisper OK')"
+python -c "import nltk; print('NLTK OK')"
+python -c "import deepface; print('DeepFace OK')"
+python -c "import tf_keras; print('tf-keras OK')"
+python -c "import sounddevice; print('sounddevice OK')"
+python -c "import pyaudio; print('PyAudio OK')"
+python -c "import pyttsx3; print('pyttsx3 OK')"
+python -c "import ollama; print('Ollama client OK')"
+
+--- Check Ollama server is running ---
+curl http://localhost:11434/api/tags
+
+--- List available Ollama models ---
+ollama list
+
+--- Check webcam index ---
+python -c "import cv2; cap=cv2.VideoCapture(0); print('Webcam 0:', cap.isOpened()); cap.release()"
+
+--- Check microphone devices ---
+python -c "import sounddevice; print(sounddevice.query_devices())"
+
+--- Fix emotion detection error ---
+--- ("DeepFace analysis failed: ... requires tf-keras package") ---
+pip install tf-keras
+python -c "import tf_keras; print('tf-keras OK')"
+
+
+===========================================================
+  QUICK REFERENCE — SWITCH MODES (no reinstall needed)
+===========================================================
+
+  Change chatbot mode (university / nexus):
+    Edit: chatbot\chatbot_config.py
+    Line: CHATBOT_MODE = "university"   <- change to "nexus"
+
+  Disable LLM (pure rule-based):
+    Edit: chatbot\chatbot_config.py
+    Line: USE_LLM = True   <- change to False
+
+  Disable a vision feature:
+    Edit: vision\vision_config.py
+    Lines: ENABLE_LIPS_DETECTION  = True  <- set False
+           ENABLE_EYES_DETECTION  = True
+           ENABLE_FACE_DETECTION  = True
+           ENABLE_HAND_DETECTION  = True
+
+  Change webcam index (if webcam not found):
+    Edit: vision\vision_config.py
+    Line: WEBCAM_INDEX = 0   <- change to 1 or 2
+
+===========================================================

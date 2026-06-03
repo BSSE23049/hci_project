@@ -1,0 +1,53 @@
+name: hci_env
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  # System-level binaries (must come from conda)
+  - numpy
+  - ffmpeg
+  - portaudio
+  - libsndfile
+  - pyaudio          # installed via conda-forge for Windows binary compatibility
+  - pip
+
+  - pip:
+    - opencv-python
+    - mediapipe
+    - deepface
+    - tf-keras         # REQUIRED by DeepFace on TensorFlow >= 2.16 (emotion detection)
+    - sounddevice
+    - soundfile
+    - pipwin          # Windows pip helper (used to install pyaudio if conda build fails)
+    - SpeechRecognition
+    - pydub
+    - openai-whisper
+    - nltk
+    - textblob
+    - scikit-learn
+    - ollama
+    - anthropic
+    - python-dotenv
+    - requests
+    - Pillow
+    - gradio
+    - pyttsx3
+
+# ---------------------------------------------------------------
+# POST-INSTALL STEPS (run these after: conda activate hci_env)
+# ---------------------------------------------------------------
+# 1. python setup_env.py
+#    Downloads NLTK corpora, TextBlob corpora, Whisper base model.
+#
+# 2. ollama pull llama3
+#    (~4.7 GB) — do this at home on a good internet connection.
+#    Requires Ollama desktop app installed: https://ollama.com
+#
+# 3. Verify install:
+#    python -c "import cv2, mediapipe, whisper, nltk; print('OK')"
+#
+# 4. Before running the chatbot app, start the Ollama server:
+#    ollama serve
+# ---------------------------------------------------------------
