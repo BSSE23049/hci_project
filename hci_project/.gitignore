@@ -1,0 +1,121 @@
+# =============================================================
+#  HCI Project .gitignore
+#  Everything listed here is generated/downloaded automatically
+#  and does NOT need to be committed to the repository.
+# =============================================================
+
+
+# -------------------------------------------------------------
+# Python bytecode & cache
+# -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+
+# -------------------------------------------------------------
+# MediaPipe model bundles
+# Auto-downloaded by setup_env.py into vision/models/
+# Each file is 4-8 MB; teammates download their own copy.
+# -------------------------------------------------------------
+vision/models/
+*.task
+
+
+# -------------------------------------------------------------
+# Whisper model cache
+# Cached by openai-whisper into the system user cache dir.
+# Listed here in case a user points WHISPER_CACHE to the repo.
+# -------------------------------------------------------------
+whisper_cache/
+*.pt
+
+
+# -------------------------------------------------------------
+# DeepFace model weights
+# Downloaded by DeepFace on first face-detection run.
+# Stored in ~/.deepface/ by default; listed here as a safety net.
+# -------------------------------------------------------------
+.deepface/
+deepface_weights/
+
+
+# -------------------------------------------------------------
+# Conda / pip temporary files
+# Created by conda env update during dependency resolution.
+# -------------------------------------------------------------
+condaenv.*.requirements.txt
+pip-wheel-metadata/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+
+# -------------------------------------------------------------
+# Virtual / conda environment folders (if ever placed in repo)
+# -------------------------------------------------------------
+env/
+venv/
+.venv/
+hci_env/
+
+
+# -------------------------------------------------------------
+# Temporary test & debug scripts (our naming convention: _*.py)
+# -------------------------------------------------------------
+_*.py
+
+
+# -------------------------------------------------------------
+# Log files and local data
+# -------------------------------------------------------------
+*.log
+*.tmp
+*.bak
+logs/
+
+
+# -------------------------------------------------------------
+# IDE and editor folders
+# -------------------------------------------------------------
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+
+
+# -------------------------------------------------------------
+# OS-generated files
+# -------------------------------------------------------------
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+
+# -------------------------------------------------------------
+# Jupyter notebooks (checkpoints only — keep .ipynb if needed)
+# -------------------------------------------------------------
+.ipynb_checkpoints/
+
+
+# -------------------------------------------------------------
+# Coverage and test reports
+# -------------------------------------------------------------
+.coverage
+htmlcov/
+.pytest_cache/

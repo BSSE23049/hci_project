@@ -11,6 +11,11 @@ from chatbot.chatbot_config import (
     AUDIO_RECORD_SECONDS,
     AUDIO_SAMPLE_RATE,
     WHISPER_MODEL,
+    ENABLE_UNIVERSITY_MODE,
+    ENABLE_NEXUS_MODE,
+    ENABLE_MODE_SWITCH,
+    ENABLE_INPUT_SWITCH,
+    ENABLE_OFFLINE_REPLAY,
 )
 from chatbot.spam_module       import is_spam
 from chatbot.intent_module     import classify_intent
@@ -279,64 +284,134 @@ def run_offline_replay() -> None:
 # Main menu
 # ---------------------------------------------------------------------------
 
+def _build_chatbot_menu(current_mode: str, current_input: str) -> list:
+    """
+    Build the active chatbot menu items by reading flags from chatbot_config
+    at call time (reads module attributes, not imported names, so patching
+    the config module is reflected immediately).
+
+    Items whose flag is False are excluded; remaining items are numbered 1..n.
+    "Exit" is always the last item.
+
+    Parameters
+    ----------
+    current_mode : str
+        Current chatbot mode ("university" or "nexus").
+    current_input : str
+        Current input mode ("text", "voice", or "hybrid").
+
+    Returns
+    -------
+    list[dict]
+        [{"key": str, "label": str, "action": str}, ...]
+    """
+    import chatbot.chatbot_config as cfg
+
+    items = []
+
+    # Start conversation — shown when at least one mode is enabled
+    if cfg.ENABLE_UNIVERSITY_MODE or cfg.ENABLE_NEXUS_MODE:
+        items.append({"label": "Start conversation", "action": "start"})
+
+    # Switch mode — only when both modes exist and the option is on
+    if cfg.ENABLE_MODE_SWITCH and cfg.ENABLE_UNIVERSITY_MODE and cfg.ENABLE_NEXUS_MODE:
+        other = "nexus" if current_mode == "university" else "university"
+        label = f"Switch to {'NEXUS' if other == 'nexus' else 'University'} mode"
+        items.append({"label": label, "action": "switch_mode"})
+
+    # Switch input — only when the option is on
+    if cfg.ENABLE_INPUT_SWITCH:
+        items.append({"label": f"Switch input  (current: {current_input.upper()})",
+                      "action": "switch_input"})
+
+    # Offline replay — only in NEXUS mode when the flag allows it
+    if cfg.ENABLE_OFFLINE_REPLAY and current_mode == "nexus" and cfg.ENABLE_NEXUS_MODE:
+        items.append({"label": "Run offline session replay", "action": "replay"})
+
+    # Exit is always last
+    items.append({"label": "Exit", "action": "exit"})
+
+    # Assign sequential keys starting at 1
+    for i, item in enumerate(items, start=1):
+        item["key"] = str(i)
+
+    return items
+
+
 def main() -> None:
     """
     Main menu loop for the chatbot app.
 
-    Presents mode/input options and dispatches to the appropriate loop.
+    Builds the menu dynamically from ENABLE_* flags in chatbot_config.py.
+    Disabled options are hidden and the numbering is always compact (1..n).
 
     Returns
     -------
     None
     """
-    current_mode  = CHATBOT_MODE
+    import chatbot.chatbot_config as cfg
+
+    # Validate that at least one mode is enabled
+    if not cfg.ENABLE_UNIVERSITY_MODE and not cfg.ENABLE_NEXUS_MODE:
+        print("[ERROR] Both chatbot modes are disabled in chatbot_config.py.")
+        print("        Set ENABLE_UNIVERSITY_MODE or ENABLE_NEXUS_MODE to True.")
+        return
+
+    # Determine starting mode — respect CHATBOT_MODE, fall back to whichever is enabled
+    if cfg.CHATBOT_MODE == "nexus" and cfg.ENABLE_NEXUS_MODE:
+        current_mode = "nexus"
+    elif cfg.ENABLE_UNIVERSITY_MODE:
+        current_mode = "university"
+    else:
+        current_mode = "nexus"
+
     current_input = DEFAULT_INPUT_MODE
 
     while True:
         mode_display  = "UNIVERSITY CHATBOT" if current_mode == "university" else "NEXUS WELLBEING ADVISOR"
-        input_display = current_input.upper()
 
         print("\n" + "=" * 45)
         print("         HCI Chatbot System")
         print(f"  Mode : {mode_display}")
-        print(f"  Input: {input_display}")
+        print(f"  Input: {current_input.upper()}")
         print("=" * 45)
-        print("  1. Start conversation")
-        print("  2. Switch mode  (university / nexus)")
-        print("  3. Switch input (text / voice / hybrid)")
-        print("  4. Exit")
-        if current_mode == "nexus":
-            print("  5. Run offline session replay")
+
+        menu = _build_chatbot_menu(current_mode, current_input)
+        for item in menu:
+            print(f"  {item['key']}. {item['label']}")
         print()
 
+        valid_keys = {item["key"]: item["action"] for item in menu}
         choice = input("Select: ").strip()
 
-        if choice == "1":
-            if current_mode == "university":
+        if choice not in valid_keys:
+            print("[WARN] Invalid selection.")
+            continue
+
+        action = valid_keys[choice]
+
+        if action == "start":
+            if current_mode == "university" and cfg.ENABLE_UNIVERSITY_MODE:
                 run_university_chatbot(current_input)
-            else:
+            elif current_mode == "nexus" and cfg.ENABLE_NEXUS_MODE:
                 run_nexus_chatbot(current_input)
 
-        elif choice == "2":
-            if current_mode == "university":
+        elif action == "switch_mode":
+            if current_mode == "university" and cfg.ENABLE_NEXUS_MODE:
                 current_mode = "nexus"
                 print("[Switched to NEXUS Wellbeing Advisor]")
-            else:
+            elif current_mode == "nexus" and cfg.ENABLE_UNIVERSITY_MODE:
                 current_mode = "university"
                 print("[Switched to University Chatbot]")
 
-        elif choice == "3":
+        elif action == "switch_input":
             modes = ["text", "voice", "hybrid"]
-            idx = modes.index(current_input)
-            current_input = modes[(idx + 1) % len(modes)]
+            current_input = modes[(modes.index(current_input) + 1) % len(modes)]
             print(f"[Input mode: {current_input.upper()}]")
 
-        elif choice == "4":
-            print("Goodbye.")
-            break
-
-        elif choice == "5" and current_mode == "nexus":
+        elif action == "replay":
             run_offline_replay()
 
-        else:
-            print("[WARN] Invalid selection.")
+        elif action == "exit":
+            print("Goodbye.")
+            break

@@ -12,11 +12,22 @@ CHATBOT_MODE       = "university"   # "university" | "nexus"
 DEFAULT_INPUT_MODE = "hybrid"       # "text" | "voice" | "hybrid"
 
 # ---------------------------------------------------------------------------
+# Menu feature flags
+# Setting any flag to False hides that option from the main menu entirely
+# and re-numbers the remaining options automatically. No other file changes.
+# ---------------------------------------------------------------------------
+ENABLE_UNIVERSITY_MODE  = True   # show / hide University Chatbot option
+ENABLE_NEXUS_MODE       = True   # show / hide NEXUS Wellbeing Advisor option
+ENABLE_MODE_SWITCH      = True   # show / hide "Switch mode" menu item
+ENABLE_INPUT_SWITCH     = True   # show / hide "Switch input" menu item
+ENABLE_OFFLINE_REPLAY   = True   # show / hide offline NEXUS session replay option
+
+# ---------------------------------------------------------------------------
 # LLM flags
 # ---------------------------------------------------------------------------
 USE_LLM         = True
 LLM_PROVIDER    = "ollama"
-OLLAMA_MODEL    = "llama3"
+OLLAMA_MODEL    = "qwen2.5-coder:7b"
 OLLAMA_BASE_URL = "http://localhost:11434"
 
 # ---------------------------------------------------------------------------
