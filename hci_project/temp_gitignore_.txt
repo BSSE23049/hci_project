@@ -64,9 +64,14 @@ hci_env/
 
 
 # -------------------------------------------------------------
-# Temporary test & debug scripts (our naming convention: _*.py)
+# Temporary test & debug scripts (our naming convention: _<word>.py)
+# Matches _vtest.py, _menutest.py, etc.
+# Does NOT match __init__.py (double underscore) — those are package files.
 # -------------------------------------------------------------
-_*.py
+_[a-z]*.py
+
+# Explicitly keep package init files (safety net for the rule above)
+!**/__init__.py
 
 
 # -------------------------------------------------------------
