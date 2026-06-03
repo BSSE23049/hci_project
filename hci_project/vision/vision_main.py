@@ -26,7 +26,6 @@ from vision.vision_config import (
     ENABLE_EYES_DETECTION,
     ENABLE_FACE_DETECTION,
     ENABLE_HAND_DETECTION,
-    ENABLE_GESTURE_GAME,
     WEBCAM_INDEX,
 )
 from vision.mp_tasks import ensure_models
@@ -57,11 +56,8 @@ def _dispatch_face(source):
 
 
 def _dispatch_hands(source):
-    """Run hand detection, optionally with the gesture game."""
-    game = False
-    if ENABLE_GESTURE_GAME:
-        game = input("Enable Gesture Game? (y/n): ").strip().lower() == "y"
-    run_hands(source, game_mode=game)
+    """Run hand detection. Game is shown when ENABLE_GESTURE_GAME=True in config."""
+    run_hands(source)
 
 
 def _build_menu() -> dict:
