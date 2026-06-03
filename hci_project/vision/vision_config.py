@@ -76,17 +76,19 @@ EMOTION_HISTORY_SECONDS  = 5   # rolling window length (seconds) for recent-mood
 # Value : (label: str, tag: str)   — `tag` is a short ASCII label drawn on the
 #          OpenCV frame (Hershey fonts cannot render emojis, so keep tags ASCII).
 #
+# Note: non_thumb_finger_count is always 0-4 (4 fingers max, thumb is separate).
+#       Keys with count 5 will never match — use (4, True) for all-5-fingers-up.
+#
 # TO CHANGE A GESTURE: edit only this dict. Nothing else changes.
 # ---------------------------------------------------------------------------
 GESTURE_MAP = {
     (0, False): ("Fist",      "OK"),
+    (0, True):  ("Thumbs Up", "+1"),
     (1, False): ("One",       "1"),
     (2, False): ("Peace",     "V"),
     (3, False): ("Three",     "3"),
     (4, False): ("Four",      "4"),
-    (5, False): ("Open Hand", "HI"),
-    (1, True):  ("Thumbs Up", "+1"),
-    (5, True):  ("High Five", "5"),
+    (4, True):  ("Open Hand", "HI"),
 }
 
 # ---------------------------------------------------------------------------
@@ -98,14 +100,13 @@ GESTURE_MAP = {
 # ---------------------------------------------------------------------------
 ENABLE_LETTER_DETECTION = True
 
+# Note: letter shapes share the finger-count space with GESTURE_MAP.
+# Only map letters whose hand shape is NOT already a gesture above,
+# or accept that the gesture label takes precedence (shown alongside the letter).
 LETTER_GESTURE_MAP = {
-    "A": (0, True),
-    "B": (4, False),
-    "I": (1, False),
-    "L": (1, True),
-    "U": (2, False),
-    "W": (3, False),
-    "Y": (5, True),
+    "L": (1, True),    # index up + thumb out  (distinct from Thumbs Up = 0 fingers)
+    "U": (2, False),   # index + middle up, no thumb (same as Peace — shown as "Peace / U")
+    "W": (3, False),   # 3 fingers up (same as Three — shown as "Three / W")
 }
 
 # ---------------------------------------------------------------------------

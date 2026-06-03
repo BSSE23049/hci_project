@@ -38,6 +38,13 @@ AUDIO_RECORD_SECONDS = 7
 AUDIO_SAMPLE_RATE    = 16000
 
 # ---------------------------------------------------------------------------
+# Intent classification mode
+# "rule_based" — keyword matching only (fast, offline, no LLM needed)
+# "ai"         — LLM classifies intent; falls back to rule_based if LLM is down
+# ---------------------------------------------------------------------------
+INTENT_CLASSIFICATION_MODE = "rule_based"   # "rule_based" | "ai"
+
+# ---------------------------------------------------------------------------
 # University chatbot — intent dictionary
 # TO ADD A NEW INTENT: add one entry here. Nothing else changes.
 # ---------------------------------------------------------------------------

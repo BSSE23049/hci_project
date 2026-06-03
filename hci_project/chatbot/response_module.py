@@ -1,8 +1,14 @@
 """
 Response generation module for the university chatbot.
 Supports static rule-based responses and optional LLM-powered responses.
-Imports all config values from chatbot_config.py.
+TTS runs in a subprocess so pyttsx3 is never initialised more than once
+per process, avoiding "run loop already started" errors on repeated calls.
 """
+
+import re
+import sys
+import subprocess
+import time
 
 from chatbot.chatbot_config import (
     UNIVERSITY_INTENTS,
@@ -19,6 +25,18 @@ _UNIVERSITY_SYSTEM_PROMPT = (
     "the library, accommodation, and transport. "
     "Keep responses concise (2-3 sentences), factual, and polite. "
     "If you are unsure, direct the student to the relevant university office."
+)
+
+# Inline pyttsx3 script executed in a fresh subprocess each call.
+_TTS_SUBPROCESS_SCRIPT = (
+    "import sys, pyttsx3\n"
+    "e = pyttsx3.init()\n"
+    "e.setProperty('rate', 160)\n"
+    "e.setProperty('volume', 0.9)\n"
+    "v = e.getProperty('voices')\n"
+    "if v: e.setProperty('voice', v[0].id)\n"
+    "e.say(sys.argv[1])\n"
+    "e.runAndWait()\n"
 )
 
 
@@ -50,7 +68,6 @@ def generate_university_response(intent: str, user_text: str) -> str:
     if not USE_LLM:
         return static_response
 
-    # Build a context-specific system prompt that names the intent
     system_prompt = (
         f"{_UNIVERSITY_SYSTEM_PROMPT}\n\n"
         f"The student is asking about: {intent}. "
@@ -68,25 +85,67 @@ def generate_university_response(intent: str, user_text: str) -> str:
 
 def speak_response(text: str) -> None:
     """
-    Speak the response text aloud using pyttsx3 text-to-speech.
+    Speak the response text aloud using pyttsx3 via a subprocess.
 
-    Falls back to a printed notice if pyttsx3 is not installed.
+    Running pyttsx3 in a fresh subprocess on every call prevents the
+    "run loop already started" error that occurs when pyttsx3.init() is
+    called multiple times in the same process.
+
+    Falls back silently if pyttsx3 is not installed.
 
     Parameters
     ----------
     text : str
         Text to synthesise and speak.
-
-    Returns
-    -------
-    None
     """
     try:
-        import pyttsx3
-        engine = pyttsx3.init()
-        engine.say(text)
-        engine.runAndWait()
+        import pyttsx3  # noqa: F401 — availability check only
     except ImportError:
-        print(f"[TTS unavailable] {text}")
+        return
+
+    # Keep only the first 3 non-separator lines, strip markdown symbols
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+    spoken_lines = []
+    for ln in lines:
+        if re.match(r"^[-|:=\s]+$", ln):
+            continue
+        spoken_lines.append(ln)
+        if len(spoken_lines) >= 3:
+            break
+    spoken = ". ".join(spoken_lines)[:300]
+    clean  = re.sub(r"[*_`#|]", " ", spoken)
+    clean  = re.sub(r":{1,}",   ",", clean)
+    clean  = re.sub(r"-{2,}",   " ", clean)
+    clean  = re.sub(r"\s+",     " ", clean).strip()
+
+    if not clean:
+        return
+
+    print("  [TTS] Speaking response...")
+    proc = None
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, "-c", _TTS_SUBPROCESS_SCRIPT, clean],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+        )
+        try:
+            _, stderr = proc.communicate(timeout=90)
+            if proc.returncode != 0 and stderr:
+                err_msg = stderr.decode("utf-8", errors="replace").strip()
+                if err_msg:
+                    print(f"  [TTS] Error: {err_msg.splitlines()[-1]}")
+        except subprocess.TimeoutExpired:
+            try:
+                proc.kill()
+                proc.communicate(timeout=2)
+            except Exception:
+                pass
+            print("  [TTS] Subprocess timed out.")
     except Exception as exc:
-        print(f"[TTS error: {exc}] {text}")
+        print(f"  [TTS] Launch error: {exc}")
+        if proc is not None:
+            try:
+                proc.kill()
+            except Exception:
+                pass

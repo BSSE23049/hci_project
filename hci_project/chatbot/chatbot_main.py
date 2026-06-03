@@ -43,9 +43,34 @@ STUDENT_LOG = [
 # Input helpers
 # ---------------------------------------------------------------------------
 
+def _record_and_transcribe() -> str:
+    """
+    Record audio from the microphone and transcribe it with Whisper.
+
+    Returns
+    -------
+    str
+        Transcribed text, or "" on failure.
+    """
+    try:
+        from shared.audio_utils import capture_audio, transcribe
+        audio = capture_audio(seconds=AUDIO_RECORD_SECONDS, sample_rate=AUDIO_SAMPLE_RATE)
+        result = transcribe(audio, sample_rate=AUDIO_SAMPLE_RATE, model_name=WHISPER_MODEL)
+        text = result["text"]
+        if text:
+            print(f"[Recognised] {text}")
+        return text
+    except Exception as exc:
+        print(f"[WARN] Voice input failed: {exc}")
+        return ""
+
+
 def _get_input_text(input_mode: str, turn: int) -> tuple:
     """
     Collect user input according to the selected input mode.
+
+    When voice capture returns no text (mic error or silence), falls back
+    to a typed prompt for that turn so the session is not lost.
 
     Parameters
     ----------
@@ -64,35 +89,24 @@ def _get_input_text(input_mode: str, turn: int) -> tuple:
         return text, "text"
 
     if input_mode == "voice":
-        return _record_and_transcribe(), "voice"
+        text = _record_and_transcribe()
+        if not text:
+            print("[Voice failed] Please type your message instead.")
+            text = input(f"You (turn {turn}): ").strip()
+            return text, "text"
+        return text, "voice"
 
     # Hybrid: let the user choose each turn
     choice = input("  [ENTER] = type  |  [V + ENTER] = voice  >  ").strip().lower()
     if choice == "v":
-        return _record_and_transcribe(), "voice"
+        text = _record_and_transcribe()
+        if not text:
+            print("[Voice failed] Please type your message instead.")
+            text = input("You: ").strip()
+            return text, "text"
+        return text, "voice"
     text = input("You: ").strip()
     return text, "text"
-
-
-def _record_and_transcribe() -> str:
-    """
-    Record audio from the microphone and transcribe it with Whisper.
-
-    Returns
-    -------
-    str
-        Transcribed text, or "" on failure.
-    """
-    try:
-        from shared.audio_utils import capture_audio, transcribe
-        audio = capture_audio(seconds=AUDIO_RECORD_SECONDS, sample_rate=AUDIO_SAMPLE_RATE)
-        result = transcribe(audio, sample_rate=AUDIO_SAMPLE_RATE, model_name=WHISPER_MODEL)
-        text = result["text"]
-        print(f"[Recognised] {text}")
-        return text
-    except Exception as exc:
-        print(f"[WARN] Voice input failed: {exc}")
-        return ""
 
 
 # ---------------------------------------------------------------------------
