@@ -112,11 +112,11 @@ def speak_response(text: str) -> None:
         spoken_lines.append(ln)
         if len(spoken_lines) >= 3:
             break
-    spoken = ". ".join(spoken_lines)[:300]
-    clean  = re.sub(r"[*_`#|]", " ", spoken)
-    clean  = re.sub(r":{1,}",   ",", clean)
-    clean  = re.sub(r"-{2,}",   " ", clean)
-    clean  = re.sub(r"\s+",     " ", clean).strip()
+    spoken = ". ".join(spoken_lines)[:300] # Limit length to avoid excessively long TTS calls
+    clean  = re.sub(r"[*_`#|]", " ", spoken) # Remove common markdown symbols that don't speak well
+    clean  = re.sub(r":{1,}",   ",", clean) # Replace colons (e.g. in "Fees:") with commas for better speech flow
+    clean  = re.sub(r"-{2,}",   " ", clean) # Replace multiple dashes (e.g. in "Course Schedule ---") with space
+    clean  = re.sub(r"\s+",     " ", clean).strip() # Collapse multiple spaces and trim
 
     if not clean:
         return

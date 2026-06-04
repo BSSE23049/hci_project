@@ -26,13 +26,15 @@ from vision.vision_config import (
     ENABLE_EYES_DETECTION,
     ENABLE_FACE_DETECTION,
     ENABLE_HAND_DETECTION,
+    ENABLE_HYBRID_MODE,
     WEBCAM_INDEX,
 )
 from vision.mp_tasks import ensure_models
-from vision.lips_module import run_lips
-from vision.eyes_module import run_eyes
-from vision.face_module import run_face
-from vision.hand_module import run_hands
+from vision.lips_module   import run_lips
+from vision.eyes_module   import run_eyes
+from vision.face_module   import run_face
+from vision.hand_module   import run_hands
+from vision.hybrid_module import run_hybrid
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +62,11 @@ def _dispatch_hands(source):
     run_hands(source)
 
 
+def _dispatch_hybrid(source):
+    """Run hybrid mode with all HYBRID_ACTIVE_MODULES on one panel."""
+    run_hybrid(source)
+
+
 def _build_menu() -> dict:
     """
     Build the active module menu by reading flags from vision_config at call time.
@@ -80,10 +87,11 @@ def _build_menu() -> dict:
     # Ordered list: (config_flag, display_name, dispatch_function)
     # To add a new module: append a tuple here + add its flag to vision_config.py
     all_modules = [
-        (cfg.ENABLE_LIPS_DETECTION, "Lips Detection", _dispatch_lips),
-        (cfg.ENABLE_EYES_DETECTION, "Eyes Detection", _dispatch_eyes),
-        (cfg.ENABLE_FACE_DETECTION, "Face Detection", _dispatch_face),
-        (cfg.ENABLE_HAND_DETECTION, "Hand Detection", _dispatch_hands),
+        (cfg.ENABLE_LIPS_DETECTION, "Lips Detection",  _dispatch_lips),
+        (cfg.ENABLE_EYES_DETECTION, "Eyes Detection",  _dispatch_eyes),
+        (cfg.ENABLE_FACE_DETECTION, "Face Detection",  _dispatch_face),
+        (cfg.ENABLE_HAND_DETECTION, "Hand Detection",  _dispatch_hands),
+        (cfg.ENABLE_HYBRID_MODE,    "Hybrid Mode",     _dispatch_hybrid),
     ]
 
     menu = {}

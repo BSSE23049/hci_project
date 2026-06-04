@@ -12,6 +12,20 @@ ENABLE_FACE_DETECTION  = True
 ENABLE_HAND_DETECTION  = True
 
 # ---------------------------------------------------------------------------
+# Hybrid mode
+# Set ENABLE_HYBRID_MODE = True to show "Hybrid Mode" in the menu.
+# HYBRID_ACTIVE_MODULES controls which features run together in one panel.
+# List any subset of: "lips", "eyes", "face", "hands"
+# Examples:
+#   ["lips", "eyes"]              — lip-sync + blink/drowsiness
+#   ["lips", "eyes", "face"]      — all face features
+#   ["face", "hands"]             — emotion + gestures
+#   ["lips", "eyes", "face", "hands"]  — everything at once
+# ---------------------------------------------------------------------------
+ENABLE_HYBRID_MODE    = True
+HYBRID_ACTIVE_MODULES = ["lips", "eyes", "face", "hands"]
+
+# ---------------------------------------------------------------------------
 # Input source
 # ---------------------------------------------------------------------------
 DEFAULT_INPUT_SOURCE = "webcam"   # "webcam" | "video" | "image"
