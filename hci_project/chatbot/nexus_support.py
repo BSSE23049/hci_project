@@ -36,6 +36,11 @@ def classify_support_need(text: str) -> dict:
     best_cat     = max(scores, key=scores.get)
     primary      = best_cat if scores[best_cat] > 0 else "GENERAL"
 
+    #========= HARD CODE FOR EMERGENCY ONLY =========
+
+    # if("fee" in lower or "fees" in lower):
+    #     primary = "FINANCIAL"
+
     return {
         "primary":      primary,
         "all_detected": all_detected,

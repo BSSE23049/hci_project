@@ -32,10 +32,18 @@ def query_ollama(
     str or None
         The model's response text, or None if Ollama is unavailable.
     """
+    # Import requests first so it is always bound before the except clauses below.
+    # If the package is missing, fail fast with a clear message instead of an
+    # UnboundLocalError on 'requests.exceptions.ConnectionError'.
     try:
         import requests
-        import json
+    except ImportError:
+        print("[WARN] 'requests' package not installed. Run: pip install requests")
+        return None
 
+    import json
+
+    try:
         url = f"{base_url}/api/chat"
         payload = {
             "model": model,

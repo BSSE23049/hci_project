@@ -1,382 +1,664 @@
-# HCI Project — Vision & Chatbot System
+# HCI Project — Function Reference
 
-A complete Human-Computer Interaction project containing **two independent applications**
-that share a small set of utilities:
+Two Python applications built for an HCI university course:
 
-| App | Launcher | What it does |
-|-----|----------|--------------|
-| **Vision App** | `python run_vision.py` | Real-time computer vision: lips, eyes, face emotion, hand gestures |
-| **Chatbot App** | `python run_chatbot.py` | University info chatbot **+** NEXUS wellbeing advisor (text/voice) |
+- **Chatbot App** (`run_chatbot.py`) — university information chatbot + NEXUS wellbeing advisor, with text / voice / hybrid input and optional LLM responses via Ollama.
+- **Vision App** (`run_vision.py`) — real-time computer vision using MediaPipe (lips, eyes, face, hands) with an optional hybrid mode that runs all features simultaneously.
 
-Everything runs on **Windows** inside a **conda environment** named `hci_env` using **Python 3.10**.
+**Quick start:**
+```bash
+conda activate hci_env
+python run_chatbot.py    # chatbot
+python run_vision.py     # vision
+```
 
 ---
 
 ## Table of Contents
 
-1. [Quick Start](#1-quick-start)
-2. [Installation (detailed)](#2-installation-detailed)
-3. [How to Run Each App](#3-how-to-run-each-app)
-4. [Project Structure — What Every File Does](#4-project-structure--what-every-file-does)
-5. [How the Code Flows](#5-how-the-code-flows)
-6. [Where to Make Changes (Config-Driven Design)](#6-where-to-make-changes-config-driven-design)
-7. [Verified Working Status](#7-verified-working-status)
-8. [Troubleshooting](#8-troubleshooting)
-
----
-
-## 1. Quick Start
-
-If conda is already installed, the fastest path is the **one-file installer**:
-
-```powershell
-# In PowerShell, from the hci_project folder:
-Set-ExecutionPolicy -Scope Process Bypass -Force
-.\install.ps1
-```
-
-This creates `hci_env`, installs every dependency, downloads the NLTK/Whisper models,
-and verifies all 14 critical imports. Then:
-
-```powershell
-conda activate hci_env
-python run_chatbot.py     # works immediately (offline replay needs no hardware)
-python run_vision.py      # needs a webcam
-```
-
----
-
-## 2. Installation (detailed)
-
-### Prerequisites
-- **Miniconda or Anaconda** — https://docs.conda.io/en/latest/miniconda.html
-- **Ollama** (optional, for LLM chatbot replies) — https://ollama.com/download
-- A webcam (for the vision app) and microphone (for voice chat input)
-
-### Option A — Automatic (recommended)
-
-`install.ps1` is generic and works on any Windows laptop. It:
-- finds conda automatically in 14 common locations (even if not on PATH),
-- creates `hci_env` (or updates it if it already exists),
-- applies the Windows PyAudio binary fix if needed,
-- runs `setup_env.py` to fetch NLTK corpora + the Whisper `base` model,
-- verifies every package import and prints a pass/fail summary.
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass -Force
-.\install.ps1
-```
-
-> Or simply **right-click `install.ps1` → Run with PowerShell**.
-
-### Option B — Manual (step by step)
-
-```powershell
-# 1. Create the environment from the spec file
-conda env create -f environment.yml
-
-# 2. Activate it (do this in EVERY new terminal)
-conda activate hci_env
-
-# 3. Verify core imports
-python -c "import cv2, mediapipe, whisper, nltk; print('Core imports OK')"
-
-# 4. Download models/corpora (NLTK + TextBlob + Whisper base)
-python setup_env.py
-
-# 5. (Optional) Download the LLM for the chatbot — needs internet, ~4.7 GB
-ollama pull llama3
-```
-
-> A full command reference (including every troubleshooting command) lives in
-> **`INSTALL_COMMANDS.txt`**.
-
-### Activating the environment
-
-Every time you open a new terminal you must activate the env before running anything:
-
-```powershell
-conda activate hci_env
-```
-
-Your prompt will change to show `(hci_env)`. To leave it later: `conda deactivate`.
-
----
-
-## 3. How to Run Each App
+### Chatbot App
+1. [shared/audio\_utils.py](#1-sharedaudio_utilspy)
+2. [shared/llm\_utils.py](#2-sharedllm_utilspy)
+3. [chatbot/spam\_module.py](#3-chatbotspam_modulepy)
+4. [chatbot/intent\_module.py](#4-chatbotintent_modulepy)
+5. [chatbot/response\_module.py](#5-chatbotresponse_modulepy)
+6. [chatbot/nexus\_wellbeing.py](#6-chatbotnexus_wellbeingpy)
+7. [chatbot/nexus\_support.py](#7-chatbotnexus_supportpy)
+8. [chatbot/nexus\_report.py](#8-chatbotnexus_reportpy)
+9. [chatbot/chatbot\_main.py](#9-chatbotchatbot_mainpy)
 
 ### Vision App
+10. [vision/vision\_utils.py](#10-visionvision_utilspy)
+11. [vision/mp\_tasks.py](#11-visionmp_taskspy)
+12. [vision/lips\_module.py](#12-visionlips_modulepy)
+13. [vision/eyes\_module.py](#13-visioneyes_modulepy)
+14. [vision/face\_module.py](#14-visionface_modulepy)
+15. [vision/hand\_module.py](#15-visionhand_modulepy)
+16. [vision/hybrid\_module.py](#16-visionhybrid_modulepy)
+17. [vision/vision\_main.py](#17-visionvision_mainpy)
 
-```powershell
-conda activate hci_env
-python run_vision.py
-```
-
-You will see a **console menu**:
-
-```
-Select Input Source:        Select Detection Mode:
-  1. Live Webcam              1. Lips Detection
-  2. Video File              2. Eyes Detection
-  3. Image File              3. Face Detection
-                             4. Hand Detection (asks: enable Gesture Game? y/n)
-                             0. Exit
-```
-
-A separate OpenCV window opens for the live video. **Press `ESC` inside that window**
-to stop detection and return to the menu.
-
-### Chatbot App
-
-The chatbot has two modes selected by `CHATBOT_MODE` in `chatbot/chatbot_config.py`.
-
-```powershell
-conda activate hci_env
-
-# (Optional, for AI replies) start Ollama in a SECOND terminal first:
-ollama serve
-
-# Then run:
-python run_chatbot.py
-```
-
-Menu:
-
-```
-  1. Start conversation
-  2. Switch mode  (university / nexus)
-  3. Switch input (text / voice / hybrid)
-  4. Exit
-  5. Run offline session replay     <- only shown in NEXUS mode
-```
-
-**No hardware needed to demo NEXUS:** choose `2` to switch to NEXUS, then `5` to run the
-offline replay — it processes a built-in 10-message student conversation and prints the
-full intelligence report. (This is the exact path verified in section 7.)
+### [Configuration Quick Reference](#configuration-quick-reference)
 
 ---
 
-## 4. Project Structure — What Every File Does
-
-```
-hci_project/
-│
-├── environment.yml          conda environment definition (all dependencies)
-├── install.ps1              one-file Windows installer + verifier
-├── setup_env.py             downloads NLTK corpora, TextBlob data, Whisper model
-├── INSTALL_COMMANDS.txt     copy-paste command reference & troubleshooting
-├── README.md               this file
-│
-├── run_vision.py            launcher → vision.vision_main.main()  (pure entry point)
-├── run_chatbot.py           launcher → chatbot.chatbot_main.main() (pure entry point)
-│
-├── shared/                  utilities used by BOTH apps
-│   ├── audio_utils.py       capture_audio() from mic + transcribe() via Whisper
-│   └── llm_utils.py         query_ollama() — the ONLY place that talks to the LLM
-│
-├── vision/                  the Vision App
-│   ├── vision_config.py     ⚙ ALL vision flags, thresholds, gesture/letter maps
-│   ├── landmarks.py         central MediaPipe landmark indices (lips/eyes/nose/fingers)
-│   ├── mp_tasks.py          model download + bgr_to_mp_image + landmarker factories
-│   ├── vision_utils.py      geometry + drawing helpers + shared detection_loop
-│   ├── models/              auto-downloaded .task model bundles (created on first run)
-│   ├── lips_module.py       MAR, smile detection, lip-sync counter
-│   ├── eyes_module.py       EAR, blink counter, drowsiness detector
-│   ├── face_module.py       landmark bbox + head pose + DeepFace emotion + mood history
-│   ├── hand_module.py       finger counting, gesture/letter lookup, gesture game
-│   └── vision_main.py       menu + source selection + dispatch to each module
-│
-└── chatbot/                 the Chatbot App
-    ├── chatbot_config.py     ⚙ ALL chatbot + NEXUS flags, intents, keywords, rules
-    ├── spam_module.py        is_spam() — keyword + domain-relevance filter
-    ├── intent_module.py      classify_intent() — keyword-scored intent detection
-    ├── response_module.py    generate_university_response() (static or LLM) + TTS
-    ├── nexus_wellbeing.py    assess_wellbeing() via VADER, trajectory, crisis alert
-    ├── nexus_support.py      classify_support_need(), transition log, nexus_respond()
-    ├── nexus_report.py       generate_intelligence_report() — risk score + summary
-    └── chatbot_main.py       menu + university loop + NEXUS loop + offline replay
-```
-
-The `⚙` files are the **only files you normally edit** to change behaviour (see section 6).
-
-### Module responsibilities in one line each
-
-**shared/**
-- `audio_utils.py` — `capture_audio(seconds, rate)` records the mic; `transcribe(audio)` returns `{text, language, confidence}` using Whisper. Degrades gracefully if libraries are missing.
-- `llm_utils.py` — `query_ollama(prompt, system_prompt, model, base_url)` posts to the local Ollama server. The **system_prompt** is where the "scenario/role" lives. Returns `None` (never crashes) if Ollama is down, triggering rule-based fallback everywhere.
-
-**vision/**
-- `vision_config.py` — feature on/off flags, all numeric thresholds, landmarker confidences, `GESTURE_MAP` (ASCII tags), `LETTER_GESTURE_MAP`, game settings.
-- `landmarks.py` — the single source of truth for landmark index numbers (lips, eyes, nose, finger tips/PIPs). Tweak which points a feature uses by editing only this file.
-- `mp_tasks.py` — the **MediaPipe Tasks API** infrastructure: model paths, first-run `.task` download into `models/`, `bgr_to_mp_image()`, and the `make_face_landmarker()` / `make_hand_landmarker()` factories (read confidences/counts from config).
-- `vision_utils.py` — shared geometry (`euclidean`, `lm_to_px`, `compute_aspect_ratio`), drawing helpers (`draw_text` with drop-shadow, `draw_red_border`, `draw_red_banner`, `draw_esc_hint`), source management, and the master `detection_loop()` used by every module (ESC = menu, 'q' = quit, videos replay).
-- `lips_module.py` — `compute_mar`, `detect_smile`, and `run_lips(source)`.
-- `eyes_module.py` — `compute_ear` and `run_eyes(source)` (blink counter + drowsiness banner).
-- `face_module.py` — `classify_head_pose`, `bbox_from_landmarks` (face box straight from landmarks, no Haar), and `run_face(source)` (DeepFace emotion, throttled, + rolling recent-mood).
-- `hand_module.py` — `count_fingers`, `classify_gesture` (reads `GESTURE_MAP` only), `detect_letter` (reads `LETTER_GESTURE_MAP`), and `run_hands(source, game_mode)`.
-- `vision_main.py` — console menu; `_choose_source()` returns the right type (int/str/ndarray); each module is dispatched through a `MODULES` registry after its `ENABLE_*` flag is checked. Uses the official Tasks drawing API for landmark overlays.
-
-**chatbot/**
-- `chatbot_config.py` — mode switch, LLM/Whisper flags, `UNIVERSITY_INTENTS`, spam/domain keywords, `NEXUS_WELLBEING_SCALE`, `NEXUS_SUPPORT_KEYWORDS`, `NEXUS_RESPONSE_RULES`, risk thresholds.
-- `spam_module.py` — `is_spam(text)` → `(bool, reason)`. Two stages: spam keywords, then domain-relevance check.
-- `intent_module.py` — `classify_intent(text)` → `{intent, confidence, pattern, all_scores}` by keyword counting.
-- `response_module.py` — `generate_university_response(intent, text)`: static response if `USE_LLM=False` or Ollama down, otherwise LLM. `speak_response(text)` does TTS (or prints if unavailable).
-- `nexus_wellbeing.py` — `assess_wellbeing(text)` (VADER → tier), `compute_trajectory(log)`, `check_and_alert(result, turn)` (crisis banner).
-- `nexus_support.py` — `classify_support_need(text)`, `log_support_transition(...)` (tracks topic shifts/escalations), `nexus_respond(...)` (matches `NEXUS_RESPONSE_RULES` top-to-bottom).
-- `nexus_report.py` — `generate_intelligence_report(...)` computes the risk score and prints the counsellor report.
-- `chatbot_main.py` — the menu and the two conversation loops, plus `run_offline_replay()`.
+## Chatbot App
 
 ---
 
-## 5. How the Code Flows
+### 1. `shared/audio_utils.py`
 
-### Vision App flow
+Microphone capture and Whisper transcription shared between apps.
 
-```
-run_vision.py
-   └─ vision_main.main()                # console menu loop
-        ├─ ensure_models()              # download .task bundles on first run
-        ├─ _choose_source()             # webcam(int) / video(str) / image(ndarray)
-        └─ run_lips/eyes/face/hands()   # picked from MODULES registry (ENABLE_* checked)
-              ├─ make_face/hand_landmarker(running_mode)   # mp_tasks factory (reads config)
-              └─ vision_utils.detection_loop(source, process):
-                    read → process(frame): detect → compute_* → draw_* (Tasks drawing API)
-                    → imshow → ESC = menu / 'q' = quit / video auto-replays
-```
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `capture_audio` | `seconds: int = 7`<br>`sample_rate: int = 16000` | `numpy.ndarray` (float32) | Records audio from the default microphone. Recording starts immediately and a countdown is displayed so the user knows how long remains. Raises `ImportError` if sounddevice is missing, `RuntimeError` if the mic cannot be accessed. |
+| `transcribe` | `audio_array: ndarray`<br>`sample_rate: int = 16000`<br>`model_name: str = "base"` | `dict` — `{"text": str, "language": str, "confidence": "high"\|"low"}` | Transcribes a float32 audio array using OpenAI Whisper. The model is loaded once and cached for all subsequent calls. Returns an empty-text dict on failure instead of raising. Confidence is `"high"` when `len(text) > 10`, else `"low"`. |
 
-### University chatbot flow (per turn)
+#### Example Usage
 
-```
-input (text / voice→Whisper)
-   → spam_module.is_spam()         # blocked? show message, next turn
-   → intent_module.classify_intent()   # prints intent + score + keywords
-   → response_module.generate_university_response()
-            ├─ USE_LLM=False or Ollama down → static answer from UNIVERSITY_INTENTS
-            └─ USE_LLM=True → query_ollama(system_prompt=role+intent)
-   → response_module.speak_response()   # TTS
-```
+```python
+import sys; sys.path.insert(0, "path/to/hci_project")
+from shared.audio_utils import capture_audio, transcribe
 
-### NEXUS wellbeing flow (per turn, with session memory)
+# Record 5 seconds from the microphone
+audio = capture_audio(seconds=5, sample_rate=16000)
 
-```
-input (text / voice→Whisper)
-   → nexus_wellbeing.assess_wellbeing()   # VADER → tier + emoji + score
-   → nexus_wellbeing.check_and_alert()    # crisis banner if CRISIS tier
-   → nexus_support.classify_support_need()# primary + all detected categories
-   → nexus_support.log_support_transition()# records topic shifts / escalations
-   → nexus_support.nexus_respond()        # first matching rule in NEXUS_RESPONSE_RULES
-   → append to session_log / wellbeing_log / support_log / transition_log
-on exit:
-   → nexus_report.generate_intelligence_report()  # trajectory + risk score + action
-```
-
-### Risk score formula (in `nexus_report.py`)
-
-```
-base_risk          = 20
-wellbeing_penalty  = abs(avg_wellbeing_score) * 40
-at_risk_penalty    = at_risk_count * 15
-escalation_penalty = escalation_count * 10
-word_count_factor  = 5 if avg_words_per_turn > 20 else 0
-risk_score         = clamp(round(sum), 0, 100)
-
->= 70 → URGENT_REFERRAL   |   >= 40 → FOLLOW_UP   |   else → NO_ACTION
+# Transcribe with the 'small' Whisper model
+result = transcribe(audio, sample_rate=16000, model_name="small")
+print(result["text"])        # "What are the library hours?"
+print(result["language"])    # "en"
+print(result["confidence"])  # "high"
 ```
 
 ---
 
-## 6. Where to Make Changes (Config-Driven Design)
+### 2. `shared/llm_utils.py`
 
-**The core design rule: behaviour changes only require editing a config file.**
-No thresholds, keywords, gesture names, or response strings are hardcoded in logic files.
+Thin wrapper around a locally running Ollama server.
 
-| I want to… | Edit this file | Change this |
-|------------|----------------|-------------|
-| Turn a vision feature on/off | `vision/vision_config.py` | `ENABLE_LIPS/EYES/FACE/HAND_DETECTION = True/False` |
-| Remap a gesture (e.g. 2 fingers) | `vision/vision_config.py` | `GESTURE_MAP` dict entry (label + ASCII tag) |
-| Add a new ASL letter | `vision/vision_config.py` | add to `LETTER_GESTURE_MAP` |
-| Turn the gesture game on/off | `vision/vision_config.py` | `ENABLE_GESTURE_GAME = True/False` |
-| Make drowsiness trigger faster | `vision/vision_config.py` | `DROWSY_FRAMES_TRIGGER` |
-| Tune detection sensitivity | `vision/vision_config.py` | `FACE/HAND_DETECTION_CONFIDENCE` |
-| Change which landmark a feature uses | `vision/landmarks.py` | the relevant index constant |
-| Fix "webcam not found" | `vision/vision_config.py` | `WEBCAM_INDEX = 0 → 1` |
-| Switch chatbot ↔ NEXUS | `chatbot/chatbot_config.py` | `CHATBOT_MODE = "university" / "nexus"` |
-| Make chatbot fully rule-based | `chatbot/chatbot_config.py` | `USE_LLM = False` |
-| Change text/voice/hybrid input | `chatbot/chatbot_config.py` | `DEFAULT_INPUT_MODE` |
-| Add a new university intent | `chatbot/chatbot_config.py` | add entry to `UNIVERSITY_INTENTS` |
-| Edit a static answer | `chatbot/chatbot_config.py` | that intent's `response_static` |
-| Add/adjust spam words | `chatbot/chatbot_config.py` | `SPAM_KEYWORDS` / `DOMAIN_KEYWORDS` |
-| Re-tune wellbeing tiers | `chatbot/chatbot_config.py` | `NEXUS_WELLBEING_SCALE` |
-| Add a support category | `chatbot/chatbot_config.py` | add to `NEXUS_SUPPORT_KEYWORDS` |
-| Change a NEXUS reply | `chatbot/chatbot_config.py` | edit a tuple in `NEXUS_RESPONSE_RULES` |
-| Change crisis line / risk cutoffs | `chatbot/chatbot_config.py` | `NEXUS_CRISIS_LINE`, `NEXUS_RISK_*` |
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `query_ollama` | `prompt: str`<br>`system_prompt: str`<br>`model: str`<br>`base_url: str`<br>`temperature: float = 0.7` | `str \| None` | Sends a chat request to Ollama and returns the model reply. Returns `None` (with a printed warning) if Ollama is not running, `requests` is not installed, or the HTTP request fails. Never raises an exception — callers always receive `None` on failure. |
 
-Adding a new intent, gesture, letter, support category, or response rule is **add one
-line/entry** — the classifiers and lookups rebuild from config automatically.
+#### Example Usage
 
----
+```python
+from shared.llm_utils import query_ollama
 
-## 7. Verified Working Status
-
-Last verified on this machine (Python 3.10.20, Windows 11):
-
-**All 20 dependencies installed** — opencv-python 4.13.0, mediapipe 0.10.35, deepface 0.0.100,
-numpy 2.2.6, openai-whisper, nltk 3.9.4, textblob 0.20.0, scikit-learn 1.7.2, sounddevice,
-soundfile, PyAudio 0.2.11, SpeechRecognition, pydub, ollama, anthropic, python-dotenv,
-requests, Pillow, gradio, pyttsx3.
-
-**All 16 project modules import cleanly** (shared, vision, chatbot).
-
-**University pipeline tested:** admission/fee intents classify correctly, spam + off-topic
-queries are blocked.
-
-**NEXUS pipeline tested:** wellbeing tiers (THRIVING→CRISIS) map correctly, support
-categories detected, escalations logged, and the full intelligence report generates
-(example output: trajectory IMPROVING, lowest tier DISTRESSED, 2 escalations,
-risk score 41 → FOLLOW_UP).
-
-**Vision config maps verified:** `(2,False)→Peace`, `(1,True)→Thumbs Up`, `(4,False)→letter B`.
-
-Run the offline replay yourself to reproduce:
-```powershell
-conda activate hci_env
-python run_chatbot.py    # → 2 (NEXUS) → 5 (offline replay)
+reply = query_ollama(
+    prompt="What are the library hours?",
+    system_prompt="You are a university info assistant. Keep replies under 2 sentences.",
+    model="qwen2.5-coder:7b",
+    base_url="http://localhost:11434",
+)
+if reply:
+    print(reply)
+else:
+    print("Ollama unavailable — using static fallback.")
 ```
 
 ---
 
-## 8. Troubleshooting
+### 3. `chatbot/spam_module.py`
 
-**PyAudio fails to install**
-```powershell
-conda install -n hci_env -c conda-forge pyaudio
-# or
-pip install pipwin && pipwin install pyaudio
+Two-stage spam and off-topic filter.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `is_spam` | `text: str` | `tuple[bool, str]` — `(flagged, reason)` | Stage 1: checks the lowercased text for any phrase from `SPAM_KEYWORDS`. Stage 2: if no spam phrase found, verifies at least one word from `DOMAIN_KEYWORDS` appears as a substring — if not, classifies as off-topic. Returns `(False, "")` for clean, on-topic input. |
+
+#### Example Usage
+
+```python
+from chatbot.spam_module import is_spam
+
+flagged, reason = is_spam("How much are the fees?")
+print(flagged, reason)   # False  ""
+
+flagged, reason = is_spam("Buy now — win a prize!")
+print(flagged, reason)   # True   "matched spam keyword: 'buy now'"
+
+flagged, reason = is_spam("hello there")
+print(flagged, reason)   # True   "off-topic: no university context detected"
 ```
 
-**Ollama not running / chatbot uses rule-based replies**
-The app falls back automatically — this is by design, not an error. For AI replies:
-1. Install Ollama, 2. run `ollama pull llama3`, 3. run `ollama serve` before the chatbot.
-Verify: `curl http://localhost:11434/api/tags`
+---
 
-**Emotion detection fails: "DeepFace analysis failed: ... requires tf-keras package"**
-On TensorFlow ≥ 2.16 DeepFace needs the `tf-keras` compatibility package. Install it:
+### 4. `chatbot/intent_module.py`
+
+Classifies a student message into one of the university intents defined in `chatbot_config.py`. The strategy is selected by `INTENT_CLASSIFICATION_MODE`.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `classify_intent` | `text: str` | `dict` — `{"intent": str, "confidence": int, "pattern": str, "all_scores": dict}` | Public entry point. Dispatches to the rule-based or AI classifier based on `INTENT_CLASSIFICATION_MODE` in config. |
+| `_classify_intent_rule_based` | `text: str` | same `dict` | Scores each intent by counting keyword matches in the lowercased text. Returns `intent="Unknown"` and `confidence=0` when all scores are zero. |
+| `_classify_intent_ai` | `text: str` | same `dict` | Sends the message to Ollama with a system prompt that lists the valid intent names and instructs the model to output only one. Validates the returned label and falls back to rule-based if Ollama is down or returns an unrecognised name. |
+
+#### Example Usage
+
+```python
+from chatbot.intent_module import classify_intent
+
+result = classify_intent("What courses does the engineering faculty offer?")
+print(result["intent"])      # "Courses"
+print(result["confidence"])  # 2   (number of matched keywords)
+print(result["pattern"])     # "course, courses"
+
+result = classify_intent("I want to go to the moon")
+print(result["intent"])      # "Unknown"
+print(result["confidence"])  # 0
 ```
-pip install tf-keras
+
+---
+
+### 5. `chatbot/response_module.py`
+
+Generates a text response and optionally speaks it aloud.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `generate_university_response` | `intent: str`<br>`user_text: str` | `str` | Returns the static `response_static` string from `UNIVERSITY_INTENTS` when `USE_LLM = False`. When `USE_LLM = True`, calls Ollama with a context-aware system prompt that includes the detected intent, and falls back to the static string if Ollama is unavailable. Returns `UNKNOWN_INTENT_RESPONSE` when `intent == "Unknown"`. |
+| `speak_response` | `text: str` | `None` | Speaks the response aloud using pyttsx3 launched in a fresh subprocess on every call. Using a subprocess prevents the "run loop already started" error that occurs when `pyttsx3.init()` is called multiple times in the same process. Strips markdown characters before speaking. Returns silently if pyttsx3 is not installed. |
+
+#### Example Usage
+
+```python
+from chatbot.response_module import generate_university_response, speak_response
+
+# USE_LLM = False in config — returns static string
+response = generate_university_response("Library", "When does the library close?")
+print(response)
+# "The university library is open Monday-Friday 08:00-22:00..."
+
+# USE_LLM = True — calls Ollama, falls back to static if Ollama is down
+response = generate_university_response("Fee", "How much is the tuition?")
+print(response)
+
+# Speak the response aloud
+speak_response(response)
+
+# Unknown intent always returns the fallback string
+print(generate_university_response("Unknown", "What is the meaning of life?"))
+# "Sorry, I could not understand your request..."
 ```
-It is already listed in `environment.yml`, so a fresh `conda env create` includes it.
 
-**DeepFace slow on first run**
-It downloads the facial-expression model (~5 MB) the first time face detection runs.
-`python setup_env.py` pre-caches it (step 5/5). Normal; later runs are fast.
+---
 
-**Webcam not found**
-Close other apps using the camera, or set `WEBCAM_INDEX = 1` in `vision/vision_config.py`.
-Test: `python -c "import cv2; print(cv2.VideoCapture(0).isOpened())"`
+### 6. `chatbot/nexus_wellbeing.py`
 
-**Microphone not detected (voice input)**
-List devices: `python -c "import sounddevice; print(sounddevice.query_devices())"`
-Set your mic as the default Windows recording device.
+VADER sentiment analysis mapped to the NEXUS wellbeing tier scale.
 
-**`conda activate` does nothing / not recognized**
-Run `conda init powershell`, close and reopen the terminal, then `conda activate hci_env`.
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `assess_wellbeing` | `text: str` | `dict` — `{"tier": str, "score": float, "emoji": str, "is_at_risk": bool}` | Runs VADER sentiment analysis and maps the compound score to a tier from `NEXUS_WELLBEING_SCALE`: THRIVING, CONTENT, NEUTRAL, STRESSED, DISTRESSED, or CRISIS. `is_at_risk` is `True` only for CRISIS. |
+| `compute_trajectory` | `wellbeing_log: list[dict]` | `dict` — `{"trend": str, "lowest_tier": str, "at_risk_turns": list[int]}` | Splits the session log into two halves and compares mean scores to determine trend: `"improving"`, `"declining"`, or `"fluctuating"`. Also returns the lowest tier reached and the (0-based) turn indices where CRISIS occurred. |
+| `check_and_alert` | `wellbeing_result: dict`<br>`turn_number: int` | `bool` | Prints a formatted CRISIS ALERT banner to the console if `is_at_risk` is `True`. Returns `True` if an alert was printed, `False` otherwise. |
+
+#### Example Usage
+
+```python
+from chatbot.nexus_wellbeing import assess_wellbeing, compute_trajectory, check_and_alert
+
+result = assess_wellbeing("I feel completely hopeless and cannot cope anymore.")
+print(result["tier"])        # "CRISIS" or "DISTRESSED"
+print(result["score"])       # e.g. -0.82
+print(result["emoji"])       # "🆘"
+print(result["is_at_risk"])  # True
+
+# Print a crisis alert if needed
+check_and_alert(result, turn_number=3)
+
+# Analyse trajectory across a session
+log = [
+    assess_wellbeing("I feel terrible today"),
+    assess_wellbeing("Things are a bit better"),
+    assess_wellbeing("I am doing well now"),
+]
+traj = compute_trajectory(log)
+print(traj["trend"])         # "improving"
+print(traj["lowest_tier"])   # "DISTRESSED"
+print(traj["at_risk_turns"]) # []
+```
+
+---
+
+### 7. `chatbot/nexus_support.py`
+
+Multi-label support category classifier and topic-transition logger.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `classify_support_need` | `text: str` | `dict` — `{"primary": str, "all_detected": list[str], "scores": dict}` | Counts keyword matches for every category defined in `NEXUS_SUPPORT_KEYWORDS` (ACADEMIC, WELLBEING, FINANCIAL, TECHNICAL, SOCIAL, ADMIN). Returns the highest-scoring category as `primary`, every category with at least one hit in `all_detected`, and the full score map. Returns `"GENERAL"` as primary if nothing matches. |
+| `log_support_transition` | `support_log: list[dict]`<br>`new_primary: str`<br>`turn_number: int` | `list[dict]` (updated log) | Appends a transition event `{prev, curr, turn, is_escalation}` when the primary category changes turn-to-turn. Marks `is_escalation=True` when the new category is `WELLBEING` and the previous was not. Returns the log unchanged if the category did not change. |
+| `nexus_respond` | `text: str`<br>`support_need: str`<br>`wellbeing_tier: str` | `str` | Walks `NEXUS_RESPONSE_RULES` top-to-bottom and returns the first rule whose category and tier both match. `"*"` is a wildcard for either field. All response strings are defined in `chatbot_config.py`. |
+
+#### Example Usage
+
+```python
+from chatbot.nexus_support import classify_support_need, log_support_transition, nexus_respond
+
+result = classify_support_need("I am really struggling with my assignment deadline.")
+print(result["primary"])       # "ACADEMIC"
+print(result["all_detected"])  # ["ACADEMIC"]
+print(result["scores"])        # {"ACADEMIC": 2, "WELLBEING": 0, ...}
+
+# Build a transition log across turns
+transition_log = []
+transition_log = log_support_transition(transition_log, "ACADEMIC",  turn_number=1)
+transition_log = log_support_transition(transition_log, "WELLBEING", turn_number=2)
+print(transition_log[-1]["is_escalation"])  # True
+
+# Select the right NEXUS response
+response = nexus_respond("", support_need="ACADEMIC", wellbeing_tier="STRESSED")
+print(response)
+```
+
+---
+
+### 8. `chatbot/nexus_report.py`
+
+Session intelligence report for the counsellor.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `generate_intelligence_report` | `session_log: list[dict]`<br>`wellbeing_log: list[dict]`<br>`support_log: list[dict]`<br>`transition_log: list[dict]` | `None` | Computes a risk score from wellbeing penalties, at-risk turns, and escalation events. Determines a recommended action (`NO_ACTION`, `FOLLOW_UP`, or `URGENT_REFERRAL`) and prints a full formatted counsellor report to the console. Called automatically at the end of `run_nexus_chatbot` and `run_offline_replay`. |
+
+**Risk score formula:**
+```
+risk = 20
+     + abs(avg_wellbeing_score) * 40
+     + at_risk_count * 15
+     + escalation_count * 10
+     + (5 if avg_words_per_turn > 20 else 0)
+risk = clamp(risk, 0, 100)
+
+>= 70 → URGENT_REFERRAL  |  >= 40 → FOLLOW_UP  |  else → NO_ACTION
+```
+
+#### Example Usage
+
+```python
+from chatbot.nexus_report import generate_intelligence_report
+
+generate_intelligence_report(
+    session_log=[
+        {"text": "I feel hopeless",     "source": "text",  "turn": 1, "word_count": 3},
+        {"text": "My fees are overdue", "source": "voice", "turn": 2, "word_count": 4},
+    ],
+    wellbeing_log=[
+        {"tier": "CRISIS",     "score": -0.80, "emoji": "🆘", "is_at_risk": True},
+        {"tier": "DISTRESSED", "score": -0.45, "emoji": "😢", "is_at_risk": False},
+    ],
+    support_log=[
+        {"primary": "WELLBEING"},
+        {"primary": "FINANCIAL"},
+    ],
+    transition_log=[
+        {"prev": "START",     "curr": "WELLBEING", "turn": 1, "is_escalation": True},
+        {"prev": "WELLBEING", "curr": "FINANCIAL",  "turn": 2, "is_escalation": False},
+    ],
+)
+# Prints a formatted report ending with:
+#   Risk Score           : 55
+#   Recommended Action   : FOLLOW_UP
+```
+
+---
+
+### 9. `chatbot/chatbot_main.py`
+
+Entry point and conversation loops for both chatbot modes.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `run_university_chatbot` | `input_mode: str` | `None` | University info chatbot loop. Each turn: collect input → spam check → classify intent → generate response → speak. Exits on `"exit"` or `"quit"`. |
+| `run_nexus_chatbot` | `input_mode: str` | `None` | NEXUS wellbeing advisor loop. Each turn: assess wellbeing, check for crisis alert, classify support need, log transitions, generate and speak response. Prints the intelligence report on exit. |
+| `run_offline_replay` | — | `None` | Processes the hardcoded `STUDENT_LOG` through the full NEXUS pipeline with no hardware (no mic, no webcam). Prints per-turn results and the intelligence report. |
+| `_get_input_text` | `input_mode: str`<br>`turn: int` | `tuple[str, str]` — `(text, source)` | Collects one turn of input in the requested mode. In voice mode, falls back to typed input when recording returns empty text. `source` is `"text"` or `"voice"`. |
+| `_record_and_transcribe` | — | `str` | Records audio via `capture_audio` and transcribes with Whisper. Prints the recognised text. Returns `""` on any failure so callers can handle gracefully. |
+| `main` | — | `None` | Displays the main menu, reads `ENABLE_*` flags from config to build only the visible options, handles mode and input switching, and dispatches to the chosen conversation loop. |
+
+#### Example Usage
+
+```python
+import sys; sys.path.insert(0, "path/to/hci_project")
+from chatbot.chatbot_main import (
+    run_university_chatbot, run_nexus_chatbot,
+    run_offline_replay, main,
+)
+
+# University chatbot — text input only
+run_university_chatbot(input_mode="text")
+
+# NEXUS advisor — voice input
+run_nexus_chatbot(input_mode="voice")
+
+# Offline NEXUS replay — no hardware required (good for testing)
+run_offline_replay()
+
+# Full interactive menu (standard entry point)
+main()
+```
+
+---
+
+## Vision App
+
+---
+
+### 10. `vision/vision_utils.py`
+
+Shared geometry helpers, drawing utilities, and the master frame-processing loop.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `euclidean` | `p1: tuple`<br>`p2: tuple` | `float` | L2 distance between two 2-D points `(x, y)`. |
+| `lm_to_px` | `landmark`<br>`w: int`<br>`h: int` | `tuple[int, int]` | Converts a normalised MediaPipe landmark (`.x`/`.y` in `[0, 1]`) to integer pixel coordinates `(x_px, y_px)`. |
+| `compute_aspect_ratio` | `top: tuple`<br>`bottom: tuple`<br>`left: tuple`<br>`right: tuple` | `float` | `‖top−bottom‖ / (‖left−right‖ + ε)`. Used for both EAR (eyes) and MAR (mouth). |
+| `draw_text` | `frame: ndarray`<br>`text: str`<br>`pos: tuple`<br>`color=(0,255,0)`<br>`scale=0.7`<br>`thickness=2` | `None` | Renders anti-aliased text with a 1-pixel black drop-shadow for readability on any background. Mutates `frame` in-place. |
+| `draw_red_border` | `frame: ndarray`<br>`thickness=10` | `None` | Draws a solid red rectangle around the entire frame — used as a threshold-crossing visual warning. |
+| `draw_red_banner` | `frame: ndarray`<br>`message: str = "ALERT!"` | `None` | Overlays a semi-transparent red banner with centred white text across the middle of the frame. |
+| `draw_esc_hint` | `frame: ndarray` | `None` | Draws a small grey `"ESC = Menu"` hint in the bottom-right corner. |
+| `open_source` | `source: int \| str \| VideoCapture` | `cv2.VideoCapture` | Opens a webcam by integer index or a video file by path. Raises `RuntimeError` if the source cannot be opened. |
+| `read_frame` | `cap_or_image` | `tuple[bool, ndarray \| None]` | Reads one BGR frame from a `VideoCapture`, or returns a copy of a static image array. |
+| `detection_loop` | `source`<br>`process_fn: callable`<br>`window_title: str` | `None` | Master loop used by every module. Calls `process_fn(frame) → frame` every tick, displays the result, handles ESC (return to menu) and `q` (quit the whole app via `SystemExit`), and replays video files from the start when they end. |
+
+#### Example Usage
+
+```python
+import cv2
+from vision.vision_utils import draw_text, draw_esc_hint, detection_loop, euclidean
+
+# Geometry
+dist = euclidean((0, 0), (3, 4))   # 5.0
+
+# Custom detection loop on webcam
+def my_process(frame):
+    draw_text(frame, "Live!", (20, 40), color=(0, 255, 0))
+    draw_esc_hint(frame)
+    return frame
+
+detection_loop(source=0, process_fn=my_process, window_title="My App")
+```
+
+---
+
+### 11. `vision/mp_tasks.py`
+
+MediaPipe Tasks API infrastructure: model download and landmarker factories.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `ensure_model` | `filename: str` | `pathlib.Path` | Returns the local path to a `.task` model bundle, downloading it from Google CDN on first use. Raises `RuntimeError` if missing and cannot be downloaded. |
+| `ensure_models` | — | `None` | Calls `ensure_model` for both `face_landmarker.task` and `hand_landmarker.task`. Called once at startup by `vision_main`. |
+| `bgr_to_mp_image` | `frame: ndarray` | `mediapipe.Image` | Converts an OpenCV BGR frame (uint8, H×W×3) to a MediaPipe SRGB `Image` ready for the Tasks API `detect()` / `detect_for_video()` calls. |
+| `make_face_landmarker` | `running_mode: RunningMode`<br>`num_faces: int = 1` | `FaceLandmarker` (context manager) | Builds a `FaceLandmarker` using confidence thresholds from `vision_config.py`. Always use as `with make_face_landmarker(...) as det:`. |
+| `make_hand_landmarker` | `running_mode: RunningMode`<br>`num_hands: int = MAX_HANDS` | `HandLandmarker` (context manager) | Builds a `HandLandmarker` using confidence thresholds from `vision_config.py`. |
+
+#### Example Usage
+
+```python
+import cv2
+from mediapipe.tasks.python.vision import RunningMode
+from vision.mp_tasks import ensure_models, bgr_to_mp_image, make_face_landmarker
+
+ensure_models()   # download .task files on first run (skipped if already present)
+
+frame = cv2.imread("photo.jpg")
+mp_img = bgr_to_mp_image(frame)
+
+with make_face_landmarker(RunningMode.IMAGE) as detector:
+    result = detector.detect(mp_img)
+    if result.face_landmarks:
+        print(f"Detected {len(result.face_landmarks)} face(s)")
+```
+
+---
+
+### 12. `vision/lips_module.py`
+
+Mouth Aspect Ratio, smile detection, and open/close lip-sync counter.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `compute_mar` | `landmarks: list`<br>`w: int`<br>`h: int` | `float` | Mouth Aspect Ratio: `‖top_lip − bottom_lip‖ / ‖left_corner − right_corner‖`. Higher = more open mouth. |
+| `detect_smile` | `landmarks: list`<br>`w: int`<br>`h: int` | `bool` | Returns `True` when both lip corners drop below the upper-lip centre by more than `SMILE_CORNER_THRESHOLD × mouth_width`. Scale-invariant check. |
+| `run_lips` | `source: int \| str \| ndarray` | `None` | Launches Module 1 — Lips Detection. Draws the lip mesh, shows Mood / MAR / open-close sync counter, and draws a red border when MAR exceeds `MAR_OPEN_THRESHOLD`. |
+
+#### Example Usage
+
+```python
+import cv2
+from mediapipe.tasks.python.vision import RunningMode
+from vision.mp_tasks import make_face_landmarker, bgr_to_mp_image
+from vision.lips_module import compute_mar, detect_smile, run_lips
+
+frame = cv2.imread("face.jpg")
+h, w  = frame.shape[:2]
+
+with make_face_landmarker(RunningMode.IMAGE) as det:
+    result = det.detect(bgr_to_mp_image(frame))
+    if result.face_landmarks:
+        lms = result.face_landmarks[0]
+        print("MAR:",   compute_mar(lms, w, h))    # e.g. 0.12
+        print("Smile:", detect_smile(lms, w, h))   # True / False
+
+# Full live module on webcam
+run_lips(source=0)
+
+# Run on a static image
+run_lips(source=frame)
+```
+
+---
+
+### 13. `vision/eyes_module.py`
+
+Blink counter, Eye Aspect Ratio, and drowsiness alert with personal auto-calibration.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `compute_ear` | `landmarks: list`<br>`eye_indices: list[int]`<br>`w: int`<br>`h: int` | `float` | Eye Aspect Ratio using 6 landmark indices and the Soukupova & Cech (2016) formula: `(‖p2−p6‖ + ‖p3−p5‖) / (2 × ‖p1−p4‖)`. Lower = more closed. |
+| `_calibrate_threshold` | `samples: list[float]` | `float` | Derives a personal closed-eye threshold: trims the bottom 10 % of EAR samples (blink frames captured during calibration), multiplies the baseline mean by `EAR_CLOSED_RATIO`, and clamps the result to `[EAR_FLOOR, EAR_CEILING]`. |
+| `run_eyes` | `source: int \| str \| ndarray` | `None` | Launches Module 2 — Eyes Detection. Runs an auto-calibration phase (progress bar shown) for `CALIBRATION_FRAMES` frames, then displays per-eye EAR, blink count, and a drowsiness banner when triggered. |
+
+#### Example Usage
+
+```python
+import cv2
+from mediapipe.tasks.python.vision import RunningMode
+from vision.mp_tasks import make_face_landmarker, bgr_to_mp_image
+from vision.landmarks import FACE_LEFT_EYE, FACE_RIGHT_EYE
+from vision.eyes_module import compute_ear, run_eyes
+
+frame = cv2.imread("face.jpg")
+h, w  = frame.shape[:2]
+
+with make_face_landmarker(RunningMode.IMAGE) as det:
+    result = det.detect(bgr_to_mp_image(frame))
+    if result.face_landmarks:
+        lms = result.face_landmarks[0]
+        ear_l = compute_ear(lms, FACE_LEFT_EYE,  w, h)
+        ear_r = compute_ear(lms, FACE_RIGHT_EYE, w, h)
+        print(f"EAR  Left: {ear_l:.3f}   Right: {ear_r:.3f}")
+
+# Full live module
+run_eyes(source=0)
+```
+
+---
+
+### 14. `vision/face_module.py`
+
+Emotion recognition (DeepFace), head pose estimation, and rolling mood window.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `classify_head_pose` | `landmarks: list`<br>`w: int`<br>`h: int` | `str` — `"Left"\|"Right"\|"Up"\|"Down"\|"Forward"` | Compares the nose tip to the inter-eye midpoint normalised by inter-eye distance to classify coarse head orientation. Scale-invariant. |
+| `bbox_from_landmarks` | `landmarks: list`<br>`w: int`<br>`h: int`<br>`pad: float = 0.10` | `tuple[int, int, int, int]` — `(x, y, w, h)` | Padded face bounding box derived from landmark extents, clamped to the frame. Used to crop the face ROI for DeepFace inference. |
+| `run_face` | `source: int \| str \| ndarray` | `None` | Launches Module 3 — Face Detection. Draws the face bounding box, runs throttled DeepFace emotion inference every `EMOTION_INFERENCE_EVERY` frames, shows a rolling recent-mood window, and displays head pose. |
+
+#### Example Usage
+
+```python
+import cv2
+from mediapipe.tasks.python.vision import RunningMode
+from vision.mp_tasks import make_face_landmarker, bgr_to_mp_image
+from vision.face_module import classify_head_pose, bbox_from_landmarks, run_face
+
+frame = cv2.imread("face.jpg")
+h, w  = frame.shape[:2]
+
+with make_face_landmarker(RunningMode.IMAGE) as det:
+    result = det.detect(bgr_to_mp_image(frame))
+    if result.face_landmarks:
+        lms = result.face_landmarks[0]
+        print("Pose:", classify_head_pose(lms, w, h))    # "Forward"
+        x, y, bw, bh = bbox_from_landmarks(lms, w, h)
+        print(f"Face box: ({x},{y})  {bw}×{bh}")
+
+# Full live module
+run_face(source=0)
+```
+
+---
+
+### 15. `vision/hand_module.py`
+
+Finger counting, gesture recognition, ASL letter detection, and gesture game.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `count_fingers` | `landmarks: list`<br>`handedness: str`<br>`w: int`<br>`h: int` | `tuple[int, bool]` — `(non_thumb_count, thumb_extended)` | Counts extended non-thumb fingers (tip Y < PIP Y = extended) and checks thumb extension using X-axis with chirality correction for palm-facing pose. |
+| `classify_gesture` | `fingers_up: int`<br>`thumb_up: bool` | `tuple[str, str]` — `(label, tag)` | Maps `(fingers_up, thumb_up)` to a gesture label and ASCII tag via `GESTURE_MAP` in config. Falls back to `(fingers_up, False)` for unknown combinations. Returns `("Unknown", "?")` if neither key matches. |
+| `detect_letter` | `fingers_up: int`<br>`thumb_up: bool` | `str \| None` | Looks up the hand pose in `LETTER_GESTURE_MAP` and returns the matched letter string, or `None`. Returns `None` immediately if `ENABLE_LETTER_DETECTION = False` in config. |
+| `run_hands` | `source: int \| str \| ndarray` | `None` | Launches Module 4 — Hand Detection. Draws hand skeletons, annotates gesture and letter near each wrist, and shows the gesture game HUD at the bottom when `ENABLE_GESTURE_GAME = True`. |
+
+#### Example Usage
+
+```python
+import cv2
+from mediapipe.tasks.python.vision import RunningMode
+from vision.mp_tasks import make_hand_landmarker, bgr_to_mp_image
+from vision.hand_module import count_fingers, classify_gesture, detect_letter, run_hands
+
+frame = cv2.imread("hand.jpg")
+h, w  = frame.shape[:2]
+
+with make_hand_landmarker(RunningMode.IMAGE) as det:
+    result = det.detect(bgr_to_mp_image(frame))
+    if result.hand_landmarks:
+        lms        = result.hand_landmarks[0]
+        handedness = result.handedness[0][0].display_name  # "Right" or "Left"
+
+        fingers_up, thumb_up = count_fingers(lms, handedness, w, h)
+        label, tag = classify_gesture(fingers_up, thumb_up)
+        letter     = detect_letter(fingers_up, thumb_up)
+
+        print(f"Fingers: {fingers_up}   Thumb: {thumb_up}")
+        print(f"Gesture: {label} [{tag}]")
+        if letter:
+            print(f"Letter: {letter}")
+
+# Full live module
+run_hands(source=0)
+```
+
+---
+
+### 16. `vision/hybrid_module.py`
+
+Runs any combination of the four feature sets simultaneously in one panel.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `run_hybrid` | `source: int \| str \| ndarray` | `None` | Reads `HYBRID_ACTIVE_MODULES` from config and runs all listed features on every frame. The FaceLandmarker is shared across lips / eyes / face so only one inference call is made per frame for all three face feature sets. Text annotations stack top-left with colour-coded section headers. Eye calibration runs in the background while other features keep annotating. `contextlib.ExitStack` ensures both detectors are always cleanly closed on any exit path. |
+
+#### Example Usage
+
+```python
+# All control is in vision_config.py — no code changes needed:
+#
+#   ENABLE_HYBRID_MODE    = True
+#   HYBRID_ACTIVE_MODULES = ["lips", "eyes"]                    # two features
+#   HYBRID_ACTIVE_MODULES = ["face", "hands"]                   # emotion + gestures
+#   HYBRID_ACTIVE_MODULES = ["lips", "eyes", "face", "hands"]   # all four
+
+from vision.hybrid_module import run_hybrid
+
+run_hybrid(source=0)                           # webcam
+run_hybrid(source="path/to/video.mp4")         # video file
+
+import cv2
+run_hybrid(source=cv2.imread("photo.jpg"))     # static image
+```
+
+---
+
+### 17. `vision/vision_main.py`
+
+Entry point and main menu for the Vision app.
+
+| Function | Parameters | Returns | Description |
+|---|---|---|---|
+| `main` | — | `None` | Reads `ENABLE_*` flags at startup to build the active module list (disabled modules are hidden and numbering is always compact 1..n). Ensures all model files are present, downloading if necessary. Repeatedly shows the menu, prompts for an input source, and dispatches to the chosen module. |
+
+#### Example Usage
+
+```python
+# Standard entry point — run from hci_project/:
+#   python run_vision.py
+#
+# Or call directly:
+import sys; sys.path.insert(0, "path/to/hci_project")
+from vision.vision_main import main
+main()
+```
+
+**Interactive menu flow:**
+```
+Select Detection Mode:        Select Input Source:
+  1. Lips Detection             1. Live Webcam
+  2. Eyes Detection             2. Video File
+  3. Face Detection             3. Image File
+  4. Hand Detection             0. Back
+  5. Hybrid Mode
+  0. Exit
+```
+
+---
+
+## Configuration Quick Reference
+
+### `chatbot/chatbot_config.py`
+
+| Flag | Default | What it controls |
+|---|---|---|
+| `CHATBOT_MODE` | `"university"` | Starting mode: `"university"` or `"nexus"` |
+| `DEFAULT_INPUT_MODE` | `"hybrid"` | Starting input: `"text"`, `"voice"`, or `"hybrid"` |
+| `INTENT_CLASSIFICATION_MODE` | `"rule_based"` | `"rule_based"` = keyword match · `"ai"` = LLM classifies intent |
+| `USE_LLM` | `True` | `True` = Ollama generates response · `False` = static string from config |
+| `OLLAMA_MODEL` | `"qwen2.5-coder:7b"` | Ollama model name |
+| `WHISPER_MODEL` | `"base"` | Whisper model size (`"tiny"`, `"base"`, `"small"`, `"medium"`) |
+| `AUDIO_RECORD_SECONDS` | `7` | Seconds of mic audio captured per voice turn |
+| `ENABLE_UNIVERSITY_MODE` | `True` | Show / hide University Chatbot in the menu |
+| `ENABLE_NEXUS_MODE` | `True` | Show / hide NEXUS Advisor in the menu |
+| `ENABLE_OFFLINE_REPLAY` | `True` | Show / hide offline session replay option |
+
+### `vision/vision_config.py`
+
+| Flag | Default | What it controls |
+|---|---|---|
+| `ENABLE_LIPS_DETECTION` | `True` | Show Lips module in menu |
+| `ENABLE_EYES_DETECTION` | `True` | Show Eyes module in menu |
+| `ENABLE_FACE_DETECTION` | `True` | Show Face module in menu |
+| `ENABLE_HAND_DETECTION` | `True` | Show Hand module in menu |
+| `ENABLE_HYBRID_MODE` | `True` | Show Hybrid mode in menu |
+| `HYBRID_ACTIVE_MODULES` | `["lips","eyes","face","hands"]` | Features active in hybrid mode (any subset) |
+| `ENABLE_GESTURE_GAME` | `True` | Show gesture game HUD in hand / hybrid mode |
+| `ENABLE_LETTER_DETECTION` | `True` | Enable ASL letter lookup in hand / hybrid mode |
+| `CALIBRATION_FRAMES` | `60` | Frames sampled for eye EAR auto-calibration (~2 s at 30 fps) |
+| `EMOTION_INFERENCE_EVERY` | `5` | Run DeepFace every N frames (1 = every frame, slower) |
+| `MAR_OPEN_THRESHOLD` | `0.55` | MAR above this triggers open-mouth / red-border warning |
+| `DROWSY_FRAMES_TRIGGER` | `20` | Consecutive closed-eye frames before drowsiness alert fires |
+| `WEBCAM_INDEX` | `0` | Device index passed to `cv2.VideoCapture` |

@@ -114,7 +114,7 @@ UNIVERSITY_INTENTS = {
     "Hostel": {
         "keywords": [
             "hostel", "accommodation", "residence", "dorm", "dormitory",
-            "room", "housing", "live", "stay", "campus", "on-campus",
+            "room", "housing", "live", "stay", "on-campus",
             "off-campus", "residential", "flat", "apartment",
         ],
         "response_static": (
@@ -151,11 +151,13 @@ SPAM_KEYWORDS = [
 DOMAIN_KEYWORDS = [
     "university", "college", "campus", "student", "students", "course",
     "lecture", "module", "programme", "degree", "exam", "assignment",
-    "fee", "admission", "tutor", "faculty", "department", "library",
-    "hostel", "study", "academic", "semester", "registration", "enroll",
-    "schedule", "timetable", "result", "grade", "marks", "portal",
+    "fee", "fees", "tuition", "cost", "price", "payment", "pay",
+    "admission", "apply", "enroll", "register", "registration",
+    "tutor", "faculty", "department", "library", "hostel", "dorm",
+    "study", "academic", "semester", "result", "grade", "marks", "portal",
     "application", "scholarship", "bursary", "transport", "parking",
     "research", "thesis", "dissertation", "project", "class", "classroom",
+    "schedule", "timetable", "lecture", "exam", "deadline", "room",
     "help", "support", "information", "info", "question", "ask",
     "wellbeing", "mental", "stress", "feeling", "health", "counsellor",
 ]
@@ -192,14 +194,6 @@ NEXUS_SUPPORT_KEYWORDS = {
         "lecturer", "project", "thesis", "dissertation", "plagiarism",
         "extension", "deferred", "module", "course", "class",
     ],
-    "WELLBEING": [
-        "hopeless", "depressed", "depression", "anxious", "anxiety",
-        "lonely", "alone", "isolated", "overwhelmed", "stressed",
-        "stress", "mental health", "wellbeing", "sad", "crying", "hurt",
-        "pain", "suffer", "struggling", "can't cope", "cannot cope",
-        "suicidal", "suicide", "self-harm", "helpless", "worthless",
-        "tired", "exhausted", "sleep", "insomnia", "panic",
-    ],
     "FINANCIAL": [
         "fee", "fees", "money", "debt", "loan", "bursary", "scholarship",
         "afford", "overdue", "invoice", "payment", "register", "financial",
@@ -222,6 +216,14 @@ NEXUS_SUPPORT_KEYWORDS = {
         "document", "certificate", "transcript", "letter", "office",
         "staff", "form", "application", "apply", "rule", "policy",
         "complaint", "appeal", "deadline", "withdrawal",
+    ],
+    "WELLBEING": [
+        "hopeless", "depressed", "depression", "anxious", "anxiety",
+        "lonely", "alone", "isolated", "overwhelmed",
+        "stress", "mental health", "wellbeing", "sad", "crying", "hurt",
+        "pain", "suffer", "struggling", "can't cope", "cannot cope",
+        "suicidal", "suicide", "self-harm", "helpless", "worthless",
+        "tired", "exhausted", "sleep", "insomnia", "panic",
     ],
 }
 

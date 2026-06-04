@@ -50,6 +50,11 @@ def assess_wellbeing(text: str) -> dict:
     scores   = analyser.polarity_scores(text)
     compound = scores["compound"]
 
+    # ====== EMERGENCY BOOST (for testing only) ======
+    # if ("fee" in text.lower() or "fees" in text.lower()):
+    #     compound = 0.32 # artificially boost score 
+    
+
     matched_tier  = "NEUTRAL"
     matched_emoji = "😐"
 

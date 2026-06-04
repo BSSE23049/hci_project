@@ -11,7 +11,6 @@ from chatbot.chatbot_config import (
     UNIVERSITY_INTENTS,
     UNKNOWN_INTENT_RESPONSE,
     INTENT_CLASSIFICATION_MODE,
-    USE_LLM,
     OLLAMA_MODEL,
     OLLAMA_BASE_URL,
 )
@@ -119,6 +118,6 @@ def classify_intent(text: str) -> dict:
         "pattern"    : str  — matched keywords (rule) or "ai-classified"
         "all_scores" : dict — {intent: score} (rule) or {} (ai)
     """
-    if INTENT_CLASSIFICATION_MODE == "ai" and USE_LLM:
+    if INTENT_CLASSIFICATION_MODE == "ai":
         return _classify_intent_ai(text)
     return _classify_intent_rule_based(text)
