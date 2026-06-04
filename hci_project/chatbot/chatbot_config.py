@@ -27,7 +27,7 @@ ENABLE_OFFLINE_REPLAY   = True   # show / hide offline NEXUS session replay opti
 # ---------------------------------------------------------------------------
 USE_LLM         = True
 LLM_PROVIDER    = "ollama"
-OLLAMA_MODEL    = "qwen2.5-coder:7b"
+OLLAMA_MODEL    = "llama3"
 OLLAMA_BASE_URL = "http://localhost:11434"
 
 # ---------------------------------------------------------------------------

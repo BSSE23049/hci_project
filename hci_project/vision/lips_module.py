@@ -5,7 +5,7 @@ Module 1 — Lips Detection (MediaPipe Face Landmarker, Tasks API).
 
 Features
 --------
-T1 Smile detection   : 'Smiling' vs 'Neutral' from lip-corner drop.
+T1 Smile detection   : 'Smiling' vs 'Neutral' from lip-corner lift above centre.
 T2 MAR tracking      : Mouth Aspect Ratio; red border when mouth is open/yawning.
 T3 Lip-sync counter  : counts open→close cycles using hysteresis.
 
@@ -73,8 +73,16 @@ def detect_smile(landmarks, w: int, h: int) -> bool:
     """
     Classify the expression as smiling or neutral.
 
-    Both mouth corners must sit below the upper-lip centre by at least
-    SMILE_CORNER_THRESHOLD * mouth_width (scale-invariant).
+    FACE_LIP_TOP (landmark 13) is the inner upper-lip edge at the mouth
+    opening.  In a smile the corners RISE above this reference; in a neutral
+    face they sit at or below it.
+
+    Y increases DOWNWARD in image coordinates, so a corner that has risen
+    above the reference has a SMALLER Y value:
+        lift = upper_y - corner_y  → positive when corner is above reference
+
+    Both corners must lift by at least SMILE_CORNER_THRESHOLD * mouth_width
+    for a smile to be detected (scale-invariant).
 
     Parameters
     ----------
@@ -97,9 +105,10 @@ def detect_smile(landmarks, w: int, h: int) -> bool:
     mouth_width = euclidean(corner_l, corner_r)
     threshold   = mouth_width * SMILE_CORNER_THRESHOLD
 
-    drop_l = corner_l[1] - upper[1]   # Y grows downward, so positive = drop
-    drop_r = corner_r[1] - upper[1]
-    return drop_l > threshold and drop_r > threshold
+    # Positive when the corner has risen ABOVE the lip-centre reference (smile).
+    lift_l = upper[1] - corner_l[1]
+    lift_r = upper[1] - corner_r[1]
+    return lift_l > threshold and lift_r > threshold
 
 
 # ---------------------------------------------------------------------------
